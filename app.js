@@ -22,9 +22,13 @@ const objectMoveSpeed = 0.75;
 const objectGap = 100;
 
 let spawnerInterval = null;
+let pointInterval = null;
 const maxHeightMultiple = 2 / 3;
 const minHeight = 10;
 const spawnerSpeed = 2000;
+
+let currentPlayerScore = 0
+let highScore = localStorage.getItem("highScore") || 0
 
 const roundedRect = (ctx, x, y, width, height, radius) => {
     ctx.beginPath();
@@ -81,6 +85,7 @@ const physics = () => {
             if (rectIntersect(bird.x, bird.y, bird.radius, bird.radius, currentObj.x, currentObj.y, currentObj.width, currentObj.height) ||
                 rectIntersect(bird.x, bird.y, bird.radius, bird.radius, currentObj.x, currentObj.y + currentObj.height + objectGap, currentObj.width, canvasHeight - currentObj.height - objectGap)) {
                 clearInterval(spawnerInterval);
+                clearInterval(pointInterval)
                 clearInterval(gameLoop);
                 drawText("Game Over", canvasWidth / 2, canvasHeight / 2, 48);
                 drawText("Click to play again", canvasWidth / 2, canvasWidth / 2 + 25, 15);
@@ -97,8 +102,9 @@ const physics = () => {
 
 
 const draw = () => {
+    ctx.strokeStyle = "#000000";
     for (let obj of objects) {
-        ctx.fillStyle = "#000000";
+        ctx.beginPath()
         ctx.rect(obj.x, obj.y, obj.width, obj.height);
         ctx.rect(obj.x, obj.y + obj.height + objectGap, obj.width, canvasHeight - obj.height - objectGap);
         ctx.stroke();
@@ -106,6 +112,8 @@ const draw = () => {
     ctx.beginPath();
     ctx.ellipse(bird.x, bird.y, bird.radius, bird.radius, Math.PI / 4, 0, 2 * Math.PI);
     ctx.stroke();
+
+    drawText(`Score: ${currentPlayerScore}     High-Score: ${highScore}`, 150, 40, 15)
 }
 
 const spawnObstacles = () => {
@@ -116,14 +124,28 @@ const spawnObstacles = () => {
     }, spawnerSpeed)
 }
 
+const addPoints = () => {
+    pointInterval = setInterval(() => {
+        currentPlayerScore += 1
+        if (currentPlayerScore > highScore) {
+            highScore = currentPlayerScore
+            localStorage.setItem("highScore", highScore)
+        }
+    }, spawnerSpeed)
+}
+
 canvas.onclick = () => {
     objects = [];
     bird.y = 300;
     bird.velY = 0;
 
+    currentPlayerScore = 0;
+
     if (!gameOn) {
         gameOn = true;
         spawnObstacles();
+
+        setTimeout(addPoints, 3600)
 
         gameLoop = setInterval(() => {
             clearCanvas();
